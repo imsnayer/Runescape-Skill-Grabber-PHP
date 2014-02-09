@@ -1,0 +1,106 @@
+<html>
+<head>
+	<title>RuneScape Test</title>
+	<script>	
+	function fetchData() {
+		//fetching the paragraph tag (<p></p>) defined as identification 'rResult' 
+		var tmpErr = document.getElementById("rResult");
+		
+		//fetching the text inputted inside the input tag with identification 'rUsername'
+		var tmpUser = document.getElementById("rUsername").value;
+		
+		//storing all RuneScape skill names inside an 1 dimensional JS array
+		var skillNames = ["Combat", "Attack", "Defense", "Strength", "Constitution", "Range", "Prayer", "Magic", "Cooking", "Woodcutting", "Fletching", "Fishing", "Firemaking", "Crafting", "Smithing", "Mining", "Herblore", "Agility", "Thieving", "Slayer", "Farming", "Runecrafting", "Hunting", "Construction", "Summoning", "Dungeoneering", "Divination"];
+		
+		//if the text entered inside the username input field is empty
+		if(tmpUser == "")
+			//output username-empty error message inside the paragraph element 'rResult'
+			tmpErr.innerHTML = "Error: Please enter a username to fetch";
+		else {
+			//initializing XMLHttpRequest
+			var xmlHttp;
+			
+			if(window.XMLHttpRequest)
+				xmlHttp = new XMLHttpRequest();
+			else
+				xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
+			
+			//storing RuneScape data source URL for username-entered inside variable url
+			var url = "http://hiscore.runescape.com/index_lite.ws?player=" + tmpUser;
+			
+			
+			//monitoring XMLHttpRequest changing activity
+			xmlHttp.onreadystatechange = (function() {
+				//checking if XMLHttpRequest has finished loading
+				//Ready State Code 4 is equivalent to 'ReadyStateComplete'
+				if(xmlHttp.readyState === 4){
+					//checking if the page has loaded correctly
+					if(xmlHttp.status === 200){
+						//fetching and decrypting the BASE64 encoded data displayed on the page
+						var resp = atob(xmlHttp.responseText);
+						
+						//checking if the response data consists of the text '404'
+						//Remember, the Error Code 404 page means the player has not been found so we need to monitor and stop that.
+						//This as we don't want the program to continue fetching the username data, if the username doesn't even exist.
+						if(resp.indexOf("404") != -1)
+							//output username not found error message inside the paragraph element 'rResult'
+							tmpErr.innerHTML = "Error: Username Not Found";
+						else {
+							//else if the player exists
+							//Split the page response line-by-line and store all lines into an 1 dimensional array
+							var lines = resp.split("\n");
+							
+							//empty the before error message text inside the paragraph element 'rResult'
+							//We don't want the error text from before to be a part of the username's result data
+							tmpErr.innerHTML = "";
+							
+							//iterate through each of the lines in the lines array
+							for(var i = 0; i < lines.length; i++){
+							
+								//if the line consists of a -1, break out of the for loop
+								//Remember, -1 separates category from category according the RuneScape structure
+								if(lines[i].indexOf("-1,") != -1)
+									break;
+								
+								//Otherwise, split the line up by the commas, store the in-between numbers in an array 
+								//, and output and store the number in the second-segment in the variable Skills. (This 
+								//is what the function Split does in a nut-shell.
+								var skill = lines[i].split(',')[1];
+								
+								//append the according skill name and its skill value to the paragraph element 'rResult'
+								tmpErr.innerHTML += skillNames[i] + ": " + skill + "<br/>";
+							}
+						}
+					}
+				}
+			});
+			
+			//btoa - base64 encrypt function in JavaScript
+			//Open our external URL fetcher PHP file asynchronously, via a GET request, and giving it the username's RuneScape data-source URL 
+			//encrypted in BASE64. (GET because I am transferring GET parameters to the PHP file via JS)
+			
+			//First Parameter - Type of Request (GET or POST)
+			//Second Parameter - URL 
+			//Third Parameter - Type of connection (true - Asynchronous, or false - Synchronous)
+			xmlHttp.open("GET", "pageFetch.php?url=" + btoa(url), true);
+			
+			//sending the request to the PHP file
+			xmlHttp.send();
+		}
+	}
+	</script>
+</head>
+<body style="font-family:Calibri; margin:0px auto; text-align:center;">
+	<h1>RuneScape Fetcher</h1>
+	<table align="center">
+	<tr>
+		<td>Username:</td>
+		<td><input id="rUsername" type="text" maxlength="12"/></td>
+	</tr>
+	<tr>
+		<td></td>
+		<td><button onclick="fetchData()">Fetch Data</button></td>
+	</tr>
+	</table>
+	<p id="rResult"></p>
+</body>
